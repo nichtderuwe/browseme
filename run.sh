@@ -1,12 +1,13 @@
 #!/bin/bash
 
+echo $PROCEED|grep -q ^0$ && echo skipping
+echo $PROCEED|grep -q ^0$ && exit 0
+
 test -e venv || (test -e /etc/myveenv && cp -aurv /etc/myveenv venv)
 test -e venv || python3 -m venv venv ;
 source venv/bin/activate
 pip3 install pillow requests beautifulsoup4 pandas webdriver-manager selenium 2>&1|grep -v "already satis"
 
-echo $PROCEED|grep -q ^0$ && echo skipping
-echo $PROCEED|grep -q ^0$ && exit 0
 
 torpsw="TOR"${RANDOM}"CONTROL"${RANDOM}
 tortok=$(docker run --rm -it alpine ash -c "apk add tor &>/dev/null; tor --hash-password $torpsw" 2>&1 |grep ":"|tail -n1)

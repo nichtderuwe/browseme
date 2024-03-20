@@ -5,3 +5,4 @@ RUN bash -c 'apt-get update &&  apt-get -y --no-install-recommends install opens
 RUN find / -name docker
 RUN dpkg -L docker-ce-cli
 RUN which docker
+CMD /bin/bash
