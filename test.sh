@@ -1,0 +1,1 @@
+docker run --rm --name novnc -p 6080:6080 -e AUTOCONNECT=true -e VNC_PASSWORD=secret -e VNC_SERVER=$(docker inspect selenium|jq -r .[].NetworkSettings.IPAddress):5900 -e VIEW_ONLY=false bonigarcia/novnc:1.1.0

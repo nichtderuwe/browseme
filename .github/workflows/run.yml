@@ -1,0 +1,98 @@
+name: browseme
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: ["main"]
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    - cron:  '*/13 * * * *'
+
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "run"
+  cancel-in-progress: false
+
+env:
+  REGISTRY_GITHUB: ghcr.io
+  REGISTRY_DOCKER: index.docker.io
+  GH_IMAGE_NAME: ghcr.io/${{ github.repository }}
+  DH_IMAGE_NAME: index.docker.io/thefoundation
+  CI_REGISTRY_IMAGE: ghcr.io/${{ github.repository }}
+ #QA_REGISTRY_IMAGE: quay.io/thefoundation/library:${{ github.event.repository.name }}
+ #QU_REGISTRY_IMAGE: quay.io/${{ github.repository }}/${{ github.event.repository.name }}
+  BUILDCACHE: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+  #BUILDCACHE: ghcr.io/${{ github.repository_owner }}/buildcache
+  PLATFORMS: "linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8"
+  #PLATFORMS: "linux/386,linux/amd64,linux/arm/v7,linux/arm64/v8"
+  #PLATFORMS: "linux/amd64"
+  PLATFORMS_ALPINE: "linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8"
+  #PLATFORMS: "linux/amd64,linux/arm64/v8"
+  #PLATFORMS: "linux/amd64,linux/arm64/v8"
+
+jobs:
+  cronjob:
+    runs-on: ubuntu-latest
+#    container: ghcr.io/nichtderuwe/mycron:latest
+#    environment:
+#      name: github-pages
+#      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: Roll_dice
+        run: echo "PROCEED=$((RANDOM%2))" >> $GITHUB_ENV
+        shell: bash
+      - if: ${{ github.event_name == 'workflow_dispatch' }}
+        name: AlwaysOnDispatch
+        run: echo "PROCEED=1" >> $GITHUB_ENV
+#      - if: env.PROCEED == '0'
+#        name: Cancelling
+#        uses: andymckay/cancel-action@0.2
+#        
+#      - if: env.PROCEED == '0'
+#        name: Waiting for cancellation
+#        run: sleep 15
+      - name: Check out this repo
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      ##- name: Installed package list
+      ##  run: apt list --installed
+      - name: Prepare
+        run: bash -c 'echo -n dice:$PROCEED ;echo $PROCEED |grep -q ^0$ && echo skipping  ;echo $PROCEED |grep -q ^0$ &&  exit 0 ; docker pull  ghcr.io/nichtderuwe/mycron:seleniumchrome & docker pull alpine & test -e venv || python3 -m venv venv ;source venv/bin/activate ;pip3 install pillow requests beautifulsoup4 pandas webdriver-manager selenium selenium-stealth   wait ' # sudo apt purge -y google-chrome-stable chromium-browser;wait
+##      - name: Remove Chrome , pull docker img , get pip
+##        run: bash -c 'echo -n dice:$PROCEED ;echo $PROCEED |grep -q ^0$ && echo skipping  ;echo $PROCEED |grep -q ^0$ &&  exit 0 ; docker pull selenium/standalone-chrome & docker pull alpine &  pip install pillow requests beautifulsoup4 pandas webdriver-manager selenium selenium-stealth & wait ' # sudo apt purge -y google-chrome-stable chromium-browser;wait
+#      - name: install ungoogled chrom
+#        run: bash -c "cd /usr/src;sudo wget -c https://github.com/clickot/ungoogled-chromium-binaries/releases/download/113.0.5672.63-1/ungoogled-chromium_113.0.5672.63-1.1_linux.tar.xz ;sudo unxz ungoogled-chromium_113.0.5672.63-1.1_linux.tar.xz;sudo tar xvf ungoogled-chromium_113.0.5672.63-1.1_linux.tar;sudo ln -s /usr/src/ungoogled-chromium_113.0.5672.63-1.1_linux/chrome /usr/bin/google-chrome"
+#      - name: Install all necessary packages
+#        run: pip install requests beautifulsoup4 pandas webdriver-manager selenium selenium-stealth
+#      - name: download img
+#        env:
+#          BASEKEY: ${{ secrets.BASEKEY }}
+#        run: docker pull ghcr.io/nichtderuwe/mycron:seleniumchrome
+      - name: Run the cron script
+        env:
+          BASEKEY: ${{ secrets.BASEKEY }}
+        run: bash run.sh
+#      - name: Setup Pages
+#        uses: actions/configure-pages@v4
+#      - name: Upload artifact
+#        uses: actions/upload-pages-artifact@v3
+#        with:
+#          # Upload entire repository
+#          path: './public'
+#      - name: Deploy to GitHub Pages
+#        id: deployment
+#        uses: actions/deploy-pages@v4
